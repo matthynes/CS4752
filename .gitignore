@@ -43,3 +43,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+/Assignment 1/grid_solution.py
+Assignment 1/__pycache__/
+
+.idea
