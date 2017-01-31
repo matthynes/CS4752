@@ -38,7 +38,7 @@ class PathFindingDisplay:
                 self.__draw_tile(self.__map_surface, (x, y), TILE_COLOR[self.__grid.get((x, y))],
                                  1)
 
-        def flood_fill(grid, start, label):
+        def flood_fill(grid, start, label, size):
             start_type = self.__grid.get(start)
 
             queue = {start}
@@ -56,6 +56,15 @@ class PathFindingDisplay:
 
                     if node_type != start_type:
                         continue
+                    try:
+                        for xx in range(size):
+                            for yy in range(size):
+                                if (x + xx) < self.__grid.width() and \
+                                                (y + yy) < self.__grid.height():
+                                    check_type = self.__grid.get((x + xx, y + yy))
+                                    assert check_type == node_type
+                    except AssertionError:
+                        continue
 
                     if grid[x][y] == 0:
                         grid[x][y] = label
@@ -70,15 +79,16 @@ class PathFindingDisplay:
 
             return grid
 
+        # TODO: fix magic number 3
         self.bfs_grid = [[[0] * self.__grid.width() for _ in range(self.__grid.height())] for _ in
                          range(
-                             self.__o_size)]
-        c = 1
-        for i in range(self.__o_size):
+                             3)]
+        for i in range(3):
+            c = 1
             for j, row in enumerate(self.bfs_grid[i]):
                 for k, tile in enumerate(row):
                     if tile == 0:
-                        self.bfs_grid[i] = flood_fill(self.bfs_grid[i], (j, k), c)
+                        self.bfs_grid[i] = flood_fill(self.bfs_grid[i], (j, k), c, i + 1)
                         c += 1
 
         self.__grid.bfs_grid = self.bfs_grid
