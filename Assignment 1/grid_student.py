@@ -41,7 +41,7 @@ class Grid:
 
     # returns true if an object of a given size can navigate from start to goal
     def is_connected(self, start, goal, size):
-        grid = self.bfs_grid[size - 1]
+        grid = self.sector_grid[size - 1]
 
         if grid[start[0]][start[1]] == grid[goal[0]][goal[1]]:
             return True

@@ -38,9 +38,13 @@ class PathFindingDisplay:
                 self.__draw_tile(self.__map_surface, (x, y), TILE_COLOR[self.__grid.get((x, y))],
                                  1)
 
+        # flood fill algorithm to create connectivity/sector map
         def flood_fill(grid, start, label, size):
             start_type = self.__grid.get(start)
 
+            # initialize queue with starting tile
+            # queue is a set to avoid unnecessarily adding length with duplicate tiles before
+            # they're visited
             queue = {start}
             visited = []
 
@@ -54,20 +58,27 @@ class PathFindingDisplay:
                     y = node[1]
                     node_type = self.__grid.get(node)
 
+                    # if currently checked tile different type than first then do nothing
                     if node_type != start_type:
                         continue
+
+                    # check type of each tile in the object itself, starting from top left
+                    # corner (x,y). if any tile is different then abandon the search
                     try:
                         for xx in range(size):
                             for yy in range(size):
                                 if (x + xx) < self.__grid.width() and \
                                                 (y + yy) < self.__grid.height():
                                     check_type = self.__grid.get((x + xx, y + yy))
+                                    # make sure all tiles inside the object are same type
                                     assert check_type == node_type
                     except AssertionError:
                         continue
 
+                    # assign label to tile if it's unvisited (0)
                     if grid[x][y] == 0:
                         grid[x][y] = label
+                        # add surrounding 4 spaces (up, down, left, right) to search queue
                         if x > 0:
                             queue.add((x - 1, y))
                         if x < len(grid[y]) - 1:
@@ -79,19 +90,23 @@ class PathFindingDisplay:
 
             return grid
 
+        # generate 2D grids initialized to 0s for each object size
+        #  format of 3D grid is [size][x][y]
         # TODO: fix magic number 3
-        self.bfs_grid = [[[0] * self.__grid.width() for _ in range(self.__grid.height())] for _ in
-                         range(
+        self.sector_grid = [[[0] * self.__grid.width() for _ in range(self.__grid.height())] for _ in
+                            range(
                              3)]
+
+        # call flood fill on each 2D grid, starting at first 0-labelled tile
         for i in range(3):
             c = 1
-            for j, row in enumerate(self.bfs_grid[i]):
+            for j, row in enumerate(self.sector_grid[i]):
                 for k, tile in enumerate(row):
                     if tile == 0:
-                        self.bfs_grid[i] = flood_fill(self.bfs_grid[i], (j, k), c, i + 1)
+                        self.sector_grid[i] = flood_fill(self.sector_grid[i], (j, k), c, i + 1)
                         c += 1
 
-        self.__grid.bfs_grid = self.bfs_grid
+        self.__grid.sector_grid = self.sector_grid
 
     # game main loop update function
     def update(self):
