@@ -39,7 +39,6 @@ class Grid:
     def height(self):
         return self.__height
 
-    # Student TODO: Implement this function
     # returns true if an object of a given size can navigate from start to goal
     def is_connected(self, start, goal, size):
         grid = self.bfs_grid[size - 1]
@@ -73,15 +72,13 @@ class Grid:
 # Student TODO: You should implement AStar as a separate class
 #               This will help keep things modular
 
-# Student TODO: You should implement a separate Node class
-#               AStar search should use these Nodes in its open and closed lists
+# Node class used in A* search
 class Node:
-    def __init__(self, root):
-        self.root = root
-        i = root[0]
-        j = root[1]
+    def __init__(self, tile):
+        self.state = tile
+        self.action = (0, 0)
+        self.g, self.f = 0
+        self.parents = None
 
-        if i - 1 < 0 or j - 1 < 0:
-            return
-        self.neighbours = list(itertools.product(range(i - 1, i + 2), range(j - 1, j + 2)))
-        self.neighbours.remove((i, j))
+    def __lt__(self, other):
+        return self.f < other.f
