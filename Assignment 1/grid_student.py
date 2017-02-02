@@ -51,33 +51,65 @@ class Grid:
 
     # returns a sample path from start tile to end tile which is probably illegal
     def get_path(self, start, end, size):
-        path = []
-        action = (1 if start[0] <= end[0] else -1, 1 if start[1] <= end[1] else -1)
-        d = (abs(start[0] - end[0]), abs(start[1] - end[1]))
-        # add the diagonal actions until we hit the row or column of the end tile
-        for diag in range(d[1] if d[0] > d[1] else d[0]):
-            path.append(action)
-        # add the remaining straight actions to reach the end tile
-        for straight in range(d[0] - d[1] if d[0] > d[1] else d[1] - d[0]):
-            path.append((action[0], 0) if d[0] > d[1] else (0, action[1]))
-        # return the path, the cost of the path, and the set of expanded nodes (for A*)
-        return path, sum(map(self.__get_action_cost, path)), set()
+        # path = []
+        # action = (1 if start[0] <= end[0] else -1, 1 if start[1] <= end[1] else -1)
+        # d = (abs(start[0] - end[0]), abs(start[1] - end[1]))
+        # # add the diagonal actions until we hit the row or column of the end tile
+        # for diag in range(d[1] if d[0] > d[1] else d[0]):
+        #     path.append(action)
+        # # add the remaining straight actions to reach the end tile
+        # for straight in range(d[0] - d[1] if d[0] > d[1] else d[1] - d[0]):
+        #     path.append((action[0], 0) if d[0] > d[1] else (0, action[1]))
+        # # return the path, the cost of the path, and the set of expanded nodes (for A*)
+        # return path, sum(map(self.__get_action_cost, path)), set()
+
+        path = AStar(start, end, self.__grid, size)
 
     # Student TODO: Replace this function with a better (but admissible) heuristic
     # estimate the cost for moving between start and end
     def estimate_cost(self, start, goal):
-        return 1
+        return 0
 
 
-# Student TODO: You should implement AStar as a separate class
-#               This will help keep things modular
+class AStar:
+    def __init__(self, start, goal, grid, size):
+        self.start = Node(start)
+        self.closed = set()
+        self.open = {self.start.state}
+        self.goal = goal
+        self.size = size
+        self.grid = grid
+
+        self.a_star()
+
+    def remove_min_from(self, olist):
+        # return node from open list with the minimum f-cost (f=g + h)
+        return min(olist, key=lambda n: n.g + self.grid.estimate_cost(n))
+
+    def add_to_open(self, node):
+        self.open.append(node)
+
+    def is_in_open(self, node):
+        return node in self.open
+
+    def is_in_closed(self, state):
+        return state in self.closed
+
+    def a_star(self):
+        if not self.open:
+            return
+
+        while self.open:
+            node = self.remove_min_from(open)
+            pass
+
 
 # Node class used in A* search
 class Node:
     def __init__(self, tile):
         self.state = tile
         self.action = (0, 0)
-        self.g, self.f = 0
+        self.g = self.f = 0
         self.parents = None
 
     def __lt__(self, other):
