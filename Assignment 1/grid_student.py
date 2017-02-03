@@ -63,7 +63,9 @@ class Grid:
         # # return the path, the cost of the path, and the set of expanded nodes (for A*)
         # return path, sum(map(self.__get_action_cost, path)), set()
 
-        path = AStar(start, end, self.__grid, size)
+        path = AStar(start, end, self, size)
+        ppath = path.a_star()
+        return ppath, 0, set()
 
     # Student TODO: Replace this function with a better (but admissible) heuristic
     # estimate the cost for moving between start and end
@@ -75,19 +77,19 @@ class AStar:
     def __init__(self, start, goal, grid, size):
         self.start = Node(start)
         self.closed = set()
-        self.open = {self.start.state}
+        self.open = {self.start}
         self.goal = goal
         self.size = size
         self.grid = grid
 
-        self.a_star()
-
     def remove_min_from(self, olist):
         # return node from open list with the minimum f-cost (f=g + h)
-        return min(olist, key=lambda n: n.g + self.grid.estimate_cost(n))
+        node = min(olist, key=lambda n: n.g + self.grid.estimate_cost(n, self.goal))
+        olist.remove(node)
+        return node
 
     def add_to_open(self, node):
-        self.open.append(node)
+        self.open.add(node)
 
     def is_in_open(self, node):
         return node in self.open
@@ -96,15 +98,38 @@ class AStar:
         return state in self.closed
 
     def a_star(self):
-        if not self.open:
-            return
-
         while self.open:
-            node = self.remove_min_from(open)
-            pass
+            node = self.remove_min_from(self.open)
+            if node.state == self.goal:
+                return self.reconstruct_path(node)
+
+            self.closed.add(node.state)
+
+            for child in children(node, self.grid, self.size):
+                if child.state not in self.closed:
+                    child.f = child.g + self.grid.estimate_cost(child, self.goal)
+                    self.open.add(child)
+
+        return []
+
+    def reconstruct_path(self, node):
+        return []
 
 
 # Node class used in A* search
+def children(node, grid, size):
+    x, y = node.state[0], node.state[1]
+    type = grid.sector_grid[size][x][y]
+    children = []
+
+    for d in [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]:
+        if (d[0] > 0 and d[1] > 0) and (d[0] < grid.width() and d[1] < grid.height()):
+            if grid.sector_grid[size][d[0]][d[1]] == type:
+                children.append(Node(d))
+
+    return children
+
+
 class Node:
     def __init__(self, tile):
         self.state = tile
