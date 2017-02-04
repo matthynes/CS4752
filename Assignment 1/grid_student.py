@@ -1,5 +1,3 @@
-import sys  # used for file reading
-
 import collections
 
 import itertools
@@ -15,6 +13,72 @@ class Grid:
         self.__grid = []
         self.__load_data(filename)
         self.__width, self.__height = len(self.__grid), len(self.__grid[0])
+
+        # flood fill algorithm to create connectivity/sector map
+        def flood_fill(grid, start, label, size):
+            start_type = self.get(start)
+
+            # initialize queue with starting tile
+            # queue is a set to avoid unnecessarily adding length with duplicate tiles before
+            # they're visited
+            queue = {start}
+            visited = []
+
+            while queue:
+                node = queue.pop()
+
+                if node not in visited:
+                    visited.append(node)
+
+                    x = node[0]
+                    y = node[1]
+                    node_type = self.get(node)
+
+                    # if currently checked tile different type than first then do nothing
+                    if node_type != start_type:
+                        continue
+
+                    # check type of each tile in the object itself, starting from top left
+                    # corner (x,y). if any tile is different then abandon the search
+                    try:
+                        for xx in range(size):
+                            for yy in range(size):
+                                if (x + xx) < self.width() and \
+                                                (y + yy) < self.height():
+                                    check_type = self.get((x + xx, y + yy))
+                                    # make sure all tiles inside the object are same type
+                                    assert check_type == node_type
+                    except AssertionError:
+                        continue
+
+                    # assign label to tile if it's unvisited (0)
+                    if grid[x][y] == 0:
+                        grid[x][y] = label
+                        # add surrounding 4 spaces (up, down, left, right) to search queue
+                        if x > 0:
+                            queue.add((x - 1, y))
+                        if x < len(grid[y]) - 1:
+                            queue.add((x + 1, y))
+                        if y > 0:
+                            queue.add((x, y - 1))
+                        if y < len(grid) - 1:
+                            queue.add((x, y + 1))
+
+            return grid
+
+        # generate 2D grids initialized to 0s for each object size
+        #  format of 3D grid is [size][x][y]
+        # TODO: fix magic number 3
+        self.sector_grid = [[[0] * self.width() for _ in range(self.height())] for _ in range(3)]
+
+        # call flood fill on each 2D grid, starting at first 0-labelled tile
+        for i in range(3):
+            c = 1
+            for j, row in enumerate(self.sector_grid[i]):
+                for k, tile in enumerate(row):
+                    if tile == 0:
+                        self.sector_grid[i] = flood_fill(self.sector_grid[i], (j, k), c, i + 1)
+                        c += 1
 
     # loads the grid data from a given file name
     def __load_data(self, filename):
@@ -63,33 +127,39 @@ class Grid:
         # # return the path, the cost of the path, and the set of expanded nodes (for A*)
         # return path, sum(map(self.__get_action_cost, path)), set()
 
-        path = AStar(start, end, self, size)
-        ppath = path.a_star()
-        return ppath, 0, set()
+        if self.is_connected(start, end, size):
+            astar = AStar(start, end, self, size)
+            path = astar.a_star()
+            return path, 0, set(path)
+
+        return [], 0, set()
 
     # Student TODO: Replace this function with a better (but admissible) heuristic
     # estimate the cost for moving between start and end
     def estimate_cost(self, start, goal):
-        return 0
+        return 1
 
 
 class AStar:
     def __init__(self, start, goal, grid, size):
         self.start = Node(start)
         self.closed = set()
-        self.open = {self.start}
+        self.open = [self.start]
         self.goal = goal
         self.size = size
         self.grid = grid
 
     def remove_min_from(self, olist):
         # return node from open list with the minimum f-cost (f=g + h)
-        node = min(olist, key=lambda n: n.g + self.grid.estimate_cost(n, self.goal))
+        node = min(olist, key=lambda n: n.f)
         olist.remove(node)
         return node
 
     def add_to_open(self, node):
-        self.open.add(node)
+        self.open.append(node)
+
+    def add_to_closed(self, state):
+        self.closed.add(state)
 
     def is_in_open(self, node):
         return node in self.open
@@ -100,31 +170,53 @@ class AStar:
     def a_star(self):
         while self.open:
             node = self.remove_min_from(self.open)
+            # check if we have found the goal
             if node.state == self.goal:
-                return self.reconstruct_path(node)
+                path = self.reconstruct_path(node)
+                return path
 
-            self.closed.add(node.state)
+            self.add_to_closed(node.state)
 
             for child in children(node, self.grid, self.size):
-                if child.state not in self.closed:
+                if self.is_in_closed(child.state):
+                    continue
+                # if child is already in open but has more efficient g-cost then update it
+                if self.is_in_open(child):
+                    new_g = node.g + self.grid.estimate_cost(node, child)
+                    if child.g > new_g:
+                        child.g = new_g
+                        child.parent = node
+                # calculate child's g-cost and add it to the open list
+                else:
+                    child.g = node.g + self.grid.estimate_cost(node, child)
                     child.f = child.g + self.grid.estimate_cost(child, self.goal)
-                    self.open.add(child)
 
+                    child.parent = node
+
+                    self.add_to_open(child)
         return []
 
     def reconstruct_path(self, node):
-        return []
+        path = []
+
+        while node.parent:
+            path.append(node)
+            node = node.parent
+        path.append(node)
+        state_path = []
+        for n in path:
+            state_path.append(n.state)
+        return state_path[::-1]
 
 
-# Node class used in A* search
 def children(node, grid, size):
     x, y = node.state[0], node.state[1]
-    type = grid.sector_grid[size][x][y]
     children = []
 
+    # add tiles above, below, and to the left and right of current node if they are connected
     for d in [(x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)]:
-        if (d[0] > 0 and d[1] > 0) and (d[0] < grid.width() and d[1] < grid.height()):
-            if grid.sector_grid[size][d[0]][d[1]] == type:
+        if (0 < d[0] < grid.width()) and (0 < d[1] < grid.height()):
+            if grid.is_connected((x, y), (d[0], d[1]), size):
                 children.append(Node(d))
 
     return children
@@ -135,7 +227,7 @@ class Node:
         self.state = tile
         self.action = (0, 0)
         self.g = self.f = 0
-        self.parents = None
+        self.parent = None
 
     def __lt__(self, other):
         return self.f < other.f
