@@ -169,6 +169,7 @@ class AStar:
 
     def a_star(self):
         while self.open:
+            print(len(self.open))
             node = self.remove_min_from(self.open)
             # check if we have found the goal
             if node.state == self.goal:
@@ -231,3 +232,6 @@ class Node:
 
     def __lt__(self, other):
         return self.f < other.f
+
+    def __eq__(self, other):
+        return self.state == other.state
