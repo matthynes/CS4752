@@ -1,6 +1,8 @@
 import collections
+import heapq
 
 import itertools
+from queue import PriorityQueue
 
 from settings import *  # use a separate file for all the constant settings
 
@@ -115,18 +117,6 @@ class Grid:
 
     # returns a sample path from start tile to end tile which is probably illegal
     def get_path(self, start, end, size):
-        # path = []
-        # action = (1 if start[0] <= end[0] else -1, 1 if start[1] <= end[1] else -1)
-        # d = (abs(start[0] - end[0]), abs(start[1] - end[1]))
-        # # add the diagonal actions until we hit the row or column of the end tile
-        # for diag in range(d[1] if d[0] > d[1] else d[0]):
-        #     path.append(action)
-        # # add the remaining straight actions to reach the end tile
-        # for straight in range(d[0] - d[1] if d[0] > d[1] else d[1] - d[0]):
-        #     path.append((action[0], 0) if d[0] > d[1] else (0, action[1]))
-        # # return the path, the cost of the path, and the set of expanded nodes (for A*)
-        # return path, sum(map(self.__get_action_cost, path)), set()
-
         if self.is_connected(start, end, size):
             astar = AStar(start, end, self, size)
             path = astar.a_star()
@@ -144,19 +134,21 @@ class AStar:
     def __init__(self, start, goal, grid, size):
         self.start = Node(start)
         self.closed = set()
-        self.open = [self.start]
+        self.open = []
+        heapq.heappush(self.open, self.start)
         self.goal = goal
         self.size = size
         self.grid = grid
 
     def remove_min_from(self, olist):
         # return node from open list with the minimum f-cost (f=g + h)
-        node = min(olist, key=lambda n: n.f)
-        olist.remove(node)
-        return node
+        # node = min(olist, key=lambda n: n.f)
+        # olist.remove(node)
+        # return node
+        return heapq.heappop(olist)
 
     def add_to_open(self, node):
-        self.open.append(node)
+        heapq.heappush(self.open, node)
 
     def add_to_closed(self, state):
         self.closed.add(state)
@@ -169,7 +161,6 @@ class AStar:
 
     def a_star(self):
         while self.open:
-            print(len(self.open))
             node = self.remove_min_from(self.open)
             # check if we have found the goal
             if node.state == self.goal:
@@ -187,12 +178,14 @@ class AStar:
                     if child.g > new_g:
                         child.g = new_g
                         child.parent = node
+                        child.action = node.state
                 # calculate child's g-cost and add it to the open list
                 else:
                     child.g = node.g + self.grid.estimate_cost(node, child)
                     child.f = child.g + self.grid.estimate_cost(child, self.goal)
 
                     child.parent = node
+                    child.action = node.state
 
                     self.add_to_open(child)
         return []
