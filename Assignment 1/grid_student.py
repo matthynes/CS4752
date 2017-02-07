@@ -113,21 +113,32 @@ class Grid:
             return True
         return False
 
-        # Student TODO: Replace this function with your A* implementation
-
-    # returns a sample path from start tile to end tile which is probably illegal
     def get_path(self, start, end, size):
         if self.is_connected(start, end, size):
             astar = AStar(start, end, self, size)
             path = astar.a_star()
-            return path, 0, set(path)
+
+            # for some reason, combining these actions
+            # into one line massively decreases performance
+            costs = map(self.__get_action_cost, path)
+            cost_sum = sum(costs)
+
+            return path, cost_sum, set(path)
 
         return [], 0, set()
 
-    # Student TODO: Replace this function with a better (but admissible) heuristic
     # estimate the cost for moving between start and end
     def estimate_cost(self, start, goal):
-        return 1
+        cost = 0
+        d = (abs(start[0] - goal[0]), abs(start[1] - goal[1]))
+        # add the diagonal actions until we hit the row or column of the end tile
+        for diag in range(d[1] if d[0] > d[1] else d[0]):
+            cost += DIAGONAL_COST
+        # add the remaining straight actions to reach the end tile
+        for straight in range(d[0] - d[1] if d[0] > d[1] else d[1] - d[0]):
+            cost += CARDINAL_COST
+
+        return cost
 
 
 class AStar:
@@ -142,9 +153,6 @@ class AStar:
 
     def remove_min_from(self, olist):
         # return node from open list with the minimum f-cost (f=g + h)
-        # node = min(olist, key=lambda n: n.f)
-        # olist.remove(node)
-        # return node
         return heapq.heappop(olist)
 
     def add_to_open(self, node):
@@ -174,15 +182,17 @@ class AStar:
                     continue
                 # if child is already in open but has more efficient g-cost then update it
                 if self.is_in_open(child):
-                    new_g = node.g + self.grid.estimate_cost(node, child)
+                    new_g = node.g + self.grid.estimate_cost(node.state, child.state)
                     if child.g > new_g:
                         child.g = new_g
                         child.parent = node
                         child.action = node.state
+                    else:
+                        continue
                 # calculate child's g-cost and add it to the open list
                 else:
-                    child.g = node.g + self.grid.estimate_cost(node, child)
-                    child.f = child.g + self.grid.estimate_cost(child, self.goal)
+                    child.g = node.g + self.grid.estimate_cost(node.state, child.state)
+                    child.f = child.g + self.grid.estimate_cost(child.state, self.goal)
 
                     child.parent = node
                     child.action = node.state
