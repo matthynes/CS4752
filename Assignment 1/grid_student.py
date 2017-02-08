@@ -1,8 +1,4 @@
-import collections
 import heapq
-
-import itertools
-from queue import PriorityQueue
 
 from settings import *  # use a separate file for all the constant settings
 
