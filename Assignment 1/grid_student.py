@@ -125,7 +125,7 @@ class Grid:
             costs = map(self.__get_action_cost, path)
             cost_sum = sum(costs)
 
-            return path, cost_sum, set(path)
+            return path, cost_sum, astar.closed
 
         return [], 0, set()
 
@@ -190,7 +190,8 @@ class AStar:
                     if child.g > new_g:
                         child.g = new_g
                         child.parent = node
-                        child.action = node.state
+                        child.action = (child.state[0] - node.state[0], child.state[1] -
+                                        node.state[1])
                     else:
                         continue
                 # calculate child's g-cost and add it to the open list
@@ -199,7 +200,8 @@ class AStar:
                     child.f = child.g + self.grid.estimate_cost(child.state, self.goal)
 
                     child.parent = node
-                    child.action = node.state
+                    child.action = (child.state[0] - node.state[0], child.state[1] -
+                                    node.state[1])
 
                     self.add_to_open(child)
         return []
@@ -215,7 +217,7 @@ class AStar:
         state_path = []
         # convert the parents into their states
         for n in path:
-            state_path.append(n.state)
+            state_path.append(n.action)
         # return list backwards so parents are listed start-end
         return state_path[::-1]
 
