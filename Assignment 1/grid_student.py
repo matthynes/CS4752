@@ -21,8 +21,8 @@ class Grid:
             start_type = self.get(start)
 
             # initialize queue with starting tile
-            # queue is a set to avoid unnecessarily adding length with duplicate tiles before
-            # they're visited
+            # queue is a set to avoid unnecessarily adding
+            # length with duplicate tiles before they're visited
             queue = {start}
             visited = []
 
@@ -42,6 +42,7 @@ class Grid:
 
                     # check type of each tile in the object itself, starting from top left
                     # corner (x,y). if any tile is different then abandon the search
+                    # FIXME: why doesn't this work?
                     try:
                         for xx in range(size):
                             for yy in range(size):
@@ -70,11 +71,11 @@ class Grid:
 
         # generate 2D grids initialized to 0s for each object size
         #  format of 3D grid is [size][x][y]
-        # TODO: fix magic number 3
-        self.sector_grid = [[[0] * self.width() for _ in range(self.height())] for _ in range(3)]
+        self.sector_grid = [[[0] * self.width() for _ in range(self.height())] for _ in range(
+            MAX_SIZE)]
 
         # call flood fill on each 2D grid, starting at first 0-labelled tile
-        for i in range(3):
+        for i in range(MAX_SIZE):
             c = 1
             for j, row in enumerate(self.sector_grid[i]):
                 for k, tile in enumerate(row):
@@ -113,6 +114,7 @@ class Grid:
             return True
         return False
 
+    # generate the path from the start to end tiles as calculated using the A* algorithm
     def get_path(self, start, end, size):
         if self.is_connected(start, end, size):
             astar = AStar(start, end, self, size)
@@ -141,10 +143,12 @@ class Grid:
         return cost
 
 
+# the class used to return the calculated path
 class AStar:
     def __init__(self, start, goal, grid, size):
         self.start = Node(start)
         self.closed = set()
+        # using the heapq module for the open list results in notable performance improvements
         self.open = []
         heapq.heappush(self.open, self.start)
         self.goal = goal
@@ -200,16 +204,19 @@ class AStar:
                     self.add_to_open(child)
         return []
 
+    # return the optimal path of nodes that leads to the goal
     def reconstruct_path(self, node):
         path = []
-
+        # iterate through and pseudo-recursively add each parent in the path
         while node.parent:
             path.append(node)
             node = node.parent
         path.append(node)
         state_path = []
+        # convert the parents into their states
         for n in path:
             state_path.append(n.state)
+        # return list backwards so parents are listed start-end
         return state_path[::-1]
 
 

@@ -12,7 +12,7 @@ TILE_COLOR  = [LIGHT_GREY, GREEN, BLUE]
 
 # display settings
 FPS         = 60
-TITLE       = "GridWorld Pathfinding Visualization"
+TITLE       = "Ultra Dank A* Search Grid: Super HD Remix"
 FONT_NAME   = "monospace"
 FONT_SIZE   = 32
 FONT_BOLD   = False
