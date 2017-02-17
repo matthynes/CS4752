@@ -1,0 +1,56 @@
+-win loops: first loop checks horizontal wins; second loop checks vertical wins;third check diagonal down; fourth is
+diagonal up
+
+-state = board
+for m in state.legal_moves():
+    child = copy.deepcopy(state)
+    child.do_move(m)
+    val = AB(child...)
+
+can be optimized to:
+
+for m in state.legal_moves():
+    state.do_move(m)
+    AB(state...)
+    state.undo_move(m)
+
+-class AlphaBeta:
+    def __init(self, ...)__:
+        ...
+        reset()
+    def reset(self):
+        self.best_move = -1
+        self.best_move_val = -infinity
+
+    def get_moves(state, player):
+        ...
+        ID_AB(state)
+
+-AB(state, depth, alpha, beta, max_player)
+    if(state is terminal) return state.eval(self.player)
+    if(timeout) raise TimeException("timeout")
+
+    for m in state.legal_moves():
+        state.do_move(m)
+        val = AB(state...)
+        state.undo_move(m)
+        if(max_player) and val > alpha:
+            if depth ==0:
+                self.temp_best_move=m
+            alpha=val
+        elif(!max_player) and val < beta:
+            beta=val
+
+        if(alpha >= beta): break
+
+        return alpha if max_player else beta
+
+-ID_AB(state)
+    max_depth = ?
+
+    for d in range(max_depth):
+        try:
+            AB(copy(state))
+            self.best_move = self.temp_best_move
+        except:
+            break
