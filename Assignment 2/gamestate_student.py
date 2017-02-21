@@ -1,5 +1,9 @@
 import sys, time, random, copy
+
+import math
 from settings import *
+
+INF = math.inf
 
 
 class GameState:
@@ -16,7 +20,7 @@ class GameState:
     # player
     def do_move(self, move):
         if not self.is_legal(move):
-            print("ILLEGAL MOVE. STOP RIGHT THERE, CRIMINAL SCUM!")
+            print("ILLEGAL MOVE.")
             sys.exit()
         self.__board[self.pieces(move)][move] = self.player_to_move()
         self.__pieces[move] += 1
@@ -70,7 +74,13 @@ class GameState:
     #                             Infinity = Some large integer > non-win evaluations 
     #
     def eval(self, player):
-        return 0
+        h = 0
+        for r in range(self.rows()):
+            for c in range(self.cols()):
+                h += self.num_in_a_row(r, c, player)
+                h -= self.num_in_a_row(r, c, self.get_opponent(player))
+
+        return h
 
     # Student TODO: Implement
     # You will probably want to implement this function first and make sure it is working before
@@ -97,36 +107,90 @@ class GameState:
     #         end up wasting precious CPU cycles and your program will perform much worse.
     #
     def winner(self):
-        player_types = {0: PLAYER_ONE, 1: PLAYER_TWO, 2: PLAYER_NONE, 3: DRAW}
-
         # check for horizontal wins
         for r in range(self.rows()):
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r, c + 1) == self.get(r, c + 2) == self.get(r, c + 3):
-                    return player_types.get(self.get(r, c))
+                    tile = self.get(r, c)
+                    if tile != 2:
+                        return tile
 
         # check for vertical wins
         for r in range(self.rows() - 3):
             for c in range(self.cols()):
                 if self.get(r, c) == self.get(r + 1, c) == self.get(r + 2, c) == self.get(r + 3, c):
-                    return player_types.get(self.get(r, c))
+                    tile = self.get(r, c)
+                    if tile != 2:
+                        return tile
 
         # check for descending diagonal wins
         for r in range(self.rows() - 3):
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r + 1, c + 1) == self.get(r + 2, c + 2) == self.get(r + 3, c + 3):
-                    return player_types.get(self.get(r, c))
+                    tile = self.get(r, c)
+                    if tile != 2:
+                        return tile
 
         # check for ascending diagonal wins
         for r in range(3, self.rows()):
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r - 1, c + 1) == self.get(r - 2, c + 2) == self.get(r - 3, c + 3):
-                    return player_types.get(self.get(r, c))
+                    tile = self.get(r, c)
+                    if tile != 2:
+                        return tile
 
-        return 0
+        if self.total_pieces() == (self.rows() * self.cols()):
+            return 3
+
+        return 2
+
+    def num_in_a_row(self, r, c, player):
+        possible = [[(r, c), (r + 1, c), (r + 2, c), (r + 3, c)],
+                    [(r, c), (r, c + 1), (r, c + 2), (r, c + 3)],
+                    [(r, c), (r + 1, c + 1), (r + 2, c + 2), (r + 3, c + 3)],
+                    [(r, c), (r - 1, c + 1), (r - 2, c + 2), (r - 3, c + 3)]]
+
+        for r in possible:
+            for c in r:
+                if not (0 <= c[0] < self.rows() and 0 <= c[1] < self.cols()):
+                    possible[possible.index(r)].remove(c)
+
+        def check_move(r, c):
+            if (0 <= r < self.rows()) and (0 <= c < self.cols()):
+                return self.get(r, c)
+            return None
+
+        possible = [*map(lambda x: [*map(lambda y: check_move(y[0], y[1]), x)], possible)]
+
+        count = 0
+
+        for t in possible:
+            same = False
+
+            for m in t:
+                if m == player:
+                    same = True
+                    continue
+                else:
+                    same = False
+                    break
+
+            if same:
+                count += 1
+
+        return count
+
+    def get_opponent(self, player):
+        if player == 0:
+            return 1
+        else:
+            return 0
 
 
-# Student TODO: Implement this class
+class TimeLimitException(Exception):
+    pass
+
+
 class Player_AlphaBeta:
     # Constructor for the Player_AlphaBeta class
     #
@@ -179,7 +243,7 @@ class Player_AlphaBeta:
         ab_value = self.alpha_beta(state, 0, -1000000, 1000000, True)
 
         # return the best move computer by alpha_beta
-        return self.best_move
+        return ab_value
 
     # Student TODO: You might have a function like this... wink wink
     #
@@ -187,51 +251,85 @@ class Player_AlphaBeta:
     #       be able to use this alpha-beta function within your ID-AB calls.
     #
     def alpha_beta(self, state, depth, alpha, beta, max_player):
-        # Student TODO: Amazing recursive things that plays good
-        #               See Lecture 12 notes on the course website
-
-        # This line will determine how long has passed (in milliseconds) since you started the
-        # timer.
-        # One of the most efficient and easiest ways to stop alpha-beta search after a time-out
-        # is to
-        # raise an exception when you see the time passed go over the time limit. This will
-        # properly
-        # unroll all of the recursive calls and exit back to the function that catches the
-        # exception.
-        # If you are implementing ID-AlphaBeta, then you should have a separate function that does
-        # the iterative deepening, and at each new maximum depth calls this alpha_beta function.
-        #  Inside
-        # that function you will catch the time out exception and stop ID-AlphaBeta, setting the
-        #  best
-        # move to the best move found at the last completed depth.
-        #
-        # NOTE: Be aware that if you just catch a default Exception, then almost ANY python
-        # error will
-        # be caught by that exception and it will be difficult to debug your program. So be sure
-        #  to make
-        # a specific exception that you raise and catch .
         self.time_elapsed_ms = (time.clock() - self.time_start) * 1000
 
-        # Be aware that passing an object in python to a function does not copy that object, it
-        # just passes a reference to it. Be sure to create a copy of the state to pass forward
-        # using
-        # the copy.deepcopy(state) function, which is python's default way of deep-copying an
-        # object.
-        # This deep copy method is the non-optimized way to implement AB, but also the easiest.
-        #
-        # There is an optimization that is easy to do in Connect4 which can avoid expensive
-        # state copies.
-        # Instead of creating a new child state copy and then applying the move to it,
-        # you can instead
-        # apply the move to the current state, pass a reference to that state into the recursive
-        #  call,
-        # and then undo the move after the recursive call returns.No matter how far down in the
-        # AB search
-        # tree we go, every time we return a value the move will be undone and we will return
-        # back to
-        # the original state after the recusion has finished. This will require the
-        # implementation of
-        # an undo_move(move) function in the GameState class.
+        if self.time_limit and self.time_elapsed_ms > self.time_limit:
+            raise TimeLimitException('Time limit exceeded.')
 
-        # for now just have a placeholder that computes a random move
-        self.best_move = random.choice(state.get_legal_moves())
+        if depth > self.max_depth:
+            return state.eval(self.player)
+
+        if max_player:
+            val = -INF
+
+            for m in state.get_legal_moves():
+                child = copy.deepcopy(state)
+                child.do_move(m)
+                val = max(val, self.alpha_beta(child, depth + 1, alpha, beta, False))
+                if depth == 0 and val > alpha:
+                    self.best_move = m
+                alpha = max(alpha, val)
+                if alpha >= beta:
+                    break
+            return val
+        else:
+            val = INF
+
+            for m in state.get_legal_moves():
+                child = copy.deepcopy(state)
+                child.do_move(m)
+                val = min(val, self.alpha_beta(child, depth + 1, alpha, beta, True))
+                beta = min(val, beta)
+
+                if beta <= alpha:
+                    break
+
+            return val
+
+            # Student TODO: Amazing recursive things that plays good
+            #               See Lecture 12 notes on the course website
+
+            # This line will determine how long has passed (in milliseconds) since you started the
+            # timer.
+            # One of the most efficient and easiest ways to stop alpha-beta search after a time-out
+            # is to
+            # raise an exception when you see the time passed go over the time limit. This will
+            # properly
+            # unroll all of the recursive calls and exit back to the function that catches the
+            # exception.
+            # If you are implementing ID-AlphaBeta, then you should have a separate function that does
+            # the iterative deepening, and at each new maximum depth calls this alpha_beta function.
+            #  Inside
+            # that function you will catch the time out exception and stop ID-AlphaBeta, setting the
+            #  best
+            # move to the best move found at the last completed depth.
+            #
+            # NOTE: Be aware that if you just catch a default Exception, then almost ANY python
+            # error will
+            # be caught by that exception and it will be difficult to debug your program. So be sure
+            #  to make
+            # a specific exception that you raise and catch .
+
+
+            # Be aware that passing an object in python to a function does not copy that object, it
+            # just passes a reference to it. Be sure to create a copy of the state to pass forward
+            # using
+            # the copy.deepcopy(state) function, which is python's default way of deep-copying an
+            # object.
+            # This deep copy method is the non-optimized way to implement AB, but also the easiest.
+            #
+            # There is an optimization that is easy to do in Connect4 which can avoid expensive
+            # state copies.
+            # Instead of creating a new child state copy and then applying the move to it,
+            # you can instead
+            # apply the move to the current state, pass a reference to that state into the recursive
+            #  call,
+            # and then undo the move after the recursive call returns.No matter how far down in the
+            # AB search
+            # tree we go, every time we return a value the move will be undone and we will return
+            # back to
+            # the original state after the recusion has finished. This will require the
+            # implementation of
+            # an undo_move(move) function in the GameState class.
+
+            # for now just have a placeholder that computes a random move
