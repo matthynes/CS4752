@@ -13,7 +13,7 @@ from gamestate_student import GameState as P2GameState
 
 # set which Player object you will use for each Player in the game
 P1Player = None
-P2Player = gamestate_student.Player_AlphaBeta(0, 2000)
+P2Player = gamestate_student.Player_AlphaBeta(3, 0)
 
 class Connect4:
     

@@ -74,13 +74,27 @@ class GameState:
     #                             Infinity = Some large integer > non-win evaluations 
     #
     def eval(self, player):
-        h = 0
-        for r in range(self.rows()):
-            for c in range(self.cols()):
-                h += self.num_in_a_row(r, c, player)
-                h -= self.num_in_a_row(r, c, self.get_opponent(player))
+        # h = 0
+        # for r in range(self.rows()):
+        #     for c in range(self.cols()):
+        #         h += self.num_in_a_row(r, c, player)
+        #         h -= self.num_in_a_row(r, c, self.get_opponent(player))
+        #
+        # if h == 4:
+        #     return INF
+        # elif h == -4:
+        #     return -INF
+        # elif h > 0:
+        #     return 10 * h
+        # else:
+        #     return 10 * random.randint(0, self.cols() - 1)
 
-        return h
+        if self.winner() == player:
+            return INF
+        elif self.winner() == self.get_opponent(player):
+            return -INF
+        else:
+            return random.choice(self.get_legal_moves())
 
     # Student TODO: Implement
     # You will probably want to implement this function first and make sure it is working before
@@ -145,6 +159,7 @@ class GameState:
         return 2
 
     def num_in_a_row(self, r, c, player):
+
         possible = [[(r, c), (r + 1, c), (r + 2, c), (r + 3, c)],
                     [(r, c), (r, c + 1), (r, c + 2), (r, c + 3)],
                     [(r, c), (r + 1, c + 1), (r + 2, c + 2), (r + 3, c + 3)],
@@ -160,15 +175,16 @@ class GameState:
                 return self.get(r, c)
             return None
 
-        possible = [*map(lambda x: [*map(lambda y: check_move(y[0], y[1]), x)], possible)]
+        possible = map(lambda x: map(lambda y: check_move(y[0], y[1]), x), possible)
 
         count = 0
 
         for t in possible:
+            count = 0
             same = False
 
             for m in t:
-                if m == player:
+                if m == player or m == PLAYER_NONE:
                     same = True
                     continue
                 else:
@@ -177,6 +193,7 @@ class GameState:
 
             if same:
                 count += 1
+        print(player, count)
 
         return count
 
@@ -240,10 +257,10 @@ class Player_AlphaBeta:
         self.player = state.player_to_move()
 
         # do your alpha beta (or ID-AB) search here
-        ab_value = self.alpha_beta(state, 0, -1000000, 1000000, True)
+        ab_value = self.alpha_beta(state, 0, -INF, INF, True)
 
         # return the best move computer by alpha_beta
-        return ab_value
+        return self.best_move
 
     # Student TODO: You might have a function like this... wink wink
     #
@@ -256,35 +273,38 @@ class Player_AlphaBeta:
         if self.time_limit and self.time_elapsed_ms > self.time_limit:
             raise TimeLimitException('Time limit exceeded.')
 
-        if depth > self.max_depth:
+        if depth > self.max_depth or state.winner() != PLAYER_NONE:
             return state.eval(self.player)
 
-        if max_player:
-            val = -INF
+        try:
+            if max_player:
+                val = -INF
 
-            for m in state.get_legal_moves():
-                child = copy.deepcopy(state)
-                child.do_move(m)
-                val = max(val, self.alpha_beta(child, depth + 1, alpha, beta, False))
-                if depth == 0 and val > alpha:
-                    self.best_move = m
-                alpha = max(alpha, val)
-                if alpha >= beta:
-                    break
-            return val
-        else:
-            val = INF
+                for m in state.get_legal_moves():
+                    child = copy.deepcopy(state)
+                    child.do_move(m)
+                    val = max(val, self.alpha_beta(child, depth + 1, alpha, beta, False))
+                    if depth == 0 and val > alpha:
+                        self.best_move = m
+                    alpha = max(alpha, val)
+                    if alpha >= beta:
+                        break
+                return val
+            else:
+                val = INF
 
-            for m in state.get_legal_moves():
-                child = copy.deepcopy(state)
-                child.do_move(m)
-                val = min(val, self.alpha_beta(child, depth + 1, alpha, beta, True))
-                beta = min(val, beta)
+                for m in state.get_legal_moves():
+                    child = copy.deepcopy(state)
+                    child.do_move(m)
+                    val = min(val, self.alpha_beta(child, depth + 1, alpha, beta, True))
+                    beta = min(val, beta)
 
-                if beta <= alpha:
-                    break
+                    if beta <= alpha:
+                        break
 
-            return val
+                return val
+        except TimeLimitException:
+            return state.eval(self.player)
 
             # Student TODO: Amazing recursive things that plays good
             #               See Lecture 12 notes on the course website
