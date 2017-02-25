@@ -61,7 +61,7 @@ players = {
     "SOL-AB-D1"  : (gamestate_solution.Player_AlphaBeta(1, 0), SolState(BOARD_ROWS, BOARD_COLS)),
     "SOL-AB-D2"  : (gamestate_solution.Player_AlphaBeta(2, 0), SolState(BOARD_ROWS, BOARD_COLS)),
     "SOL-AB-D3"  : (gamestate_solution.Player_AlphaBeta(3, 0), SolState(BOARD_ROWS, BOARD_COLS)),
-    #"SOL-AB-T1"  : (gamestate_solution.Player_AlphaBeta(0, 1000), SolState(BOARD_ROWS, BOARD_COLS)),
+    # "SOL-AB-T1"  : (gamestate_solution.Player_AlphaBeta(0, 1000), SolState(BOARD_ROWS, BOARD_COLS)),
     "STU-AB-D1"  : (gamestate_student.Player_AlphaBeta(1, 0), StuState(BOARD_ROWS, BOARD_COLS)),
     "STU-AB-D2"  : (gamestate_student.Player_AlphaBeta(2, 0), StuState(BOARD_ROWS, BOARD_COLS))
 }
