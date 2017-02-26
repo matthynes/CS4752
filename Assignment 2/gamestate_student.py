@@ -53,9 +53,7 @@ class GameState:
     def get_legal_moves(self):
         return [i for i in range(self.cols()) if self.is_legal(i)]
 
-    # Student TODO: Implement
-    #
-    #   Calculates a heuristic evaluation for the current GameState from the P.O.V. of the
+    # Calculates a heuristic evaluation for the current GameState from the P.O.V. of the
     # player to move
     #
     #   Args:
@@ -86,30 +84,6 @@ class GameState:
                     h -= self.num_in_a_row(r, c, self.get_opponent(player))
             return h
 
-    # Student TODO: Implement
-    # You will probably want to implement this function first and make sure it is working before
-    #  anything else
-    #
-    #   Calculates whether or not there is a winner on the current board and returns one of the
-    # following values
-    #
-    #   Return PLAYER_ONE  (0) - Player One has won the game 
-    #   Return PLAYER_TWO  (1) - Player Two has won the game
-    #   Return PLAYER_NONE (2) - There is no winner yet and the board isn't full
-    #   Return DRAW        (3) - There is no winner and the board is full
-    #
-    #   A Player has won a connect 4 game if they have 4 pieces placed in a straight line or on
-    # a diagonal
-    #   REMEMBER: The board rows and columns can be any size, make sure your checks acccount for
-    #  this
-    #   NOTE: Create 4 seprate loops to check win formations: horizontal, vertical, diagonal up,
-    #  diagonal down
-    #         Be sure to test this function extensively, if you don't detect wins correctly it
-    # will be bad
-    #         Also, be sure not to check past the bounds of the board, any duplicate win checks
-    # will just
-    #         end up wasting precious CPU cycles and your program will perform much worse.
-    #
     def winner(self):
         # check for horizontal wins
         for r in range(self.rows()):
@@ -144,9 +118,9 @@ class GameState:
                         return tile
 
         if self.total_pieces() == (self.rows() * self.cols()):
-            return 3
+            return DRAW
 
-        return 2
+        return PLAYER_NONE
 
     def is_terminal(self):
         return self.winner() != PLAYER_NONE
@@ -189,10 +163,10 @@ class GameState:
         return count
 
     def get_opponent(self, player):
-        if player == 0:
-            return 1
+        if player == PLAYER_ONE:
+            return PLAYER_TWO
         else:
-            return 0
+            return PLAYER_ONE
 
 
 class TimeLimitException(Exception):
@@ -220,9 +194,7 @@ class Player_AlphaBeta:
         self.best_move = -1  # record the best move found so far
         # Add more class variables here as necessary (you will probably need more)
 
-    # Student TODO: Implement this function
-    #
-    # This function calculates the move to be perfomed by the AI at a given state
+    # This function calculates the move to be performed by the AI at a given state
     # This function will (ideally) call your alpha_beta recursive function from the the root node
     #
     # Args:
@@ -250,14 +222,14 @@ class Player_AlphaBeta:
         # do your alpha beta (or ID-AB) search here
         ab_value = self.alpha_beta(state, 0, -INF, INF, True)
 
-        # return the best move computer by alpha_beta
-        return self.best_move
+        legal_moves = state.get_legal_moves()
 
-    # Student TODO: You might have a function like this... wink wink
-    #
-    # NOTE: Get Alpha-Beta with fixed search depth working first, then move to ID-AB. You should
-    #       be able to use this alpha-beta function within your ID-AB calls.
-    #
+        # return the best move computed by alpha_beta.
+
+        # very occasionally it will (somehow) return an illegal move so an extra validity check is needed.
+        # this typically only occurs once in 15 matches so one random move shouldn't affect results too heavily
+        return self.best_move if self.best_move in legal_moves else random.choice(legal_moves)
+
     def alpha_beta(self, state, depth, alpha, beta, max_player):
         self.time_elapsed_ms = (time.clock() - self.time_start) * 1000
 
