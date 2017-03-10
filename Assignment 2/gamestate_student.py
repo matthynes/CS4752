@@ -3,6 +3,7 @@ import sys, time, random, copy
 import math
 from settings import *
 
+# Infinity constant used for AB & evaluation function
 INF = math.inf
 
 
@@ -71,12 +72,16 @@ class GameState:
     #     Larger negative value = Opponent is winning the game (-infinity if player has lost)
     #                             Infinity = Some large integer > non-win evaluations 
     #
+    # This heuristic evaluation determines the "goodness" of a move by determining how many potential
+    # four-in-a-rows each player can still make.
     def eval(self, player):
+        # if the player is about to win/lose then the evaluation is infinity and -infinity, respectively
         if self.winner() == player:
             return INF
         elif self.winner() == self.get_opponent(player):
             return -INF
         else:
+            # calculates the number of potential wins for the player then subtracts the opponent's potential wins
             h = 0
             for r in range(self.rows()):
                 for c in range(self.cols()):
@@ -90,7 +95,7 @@ class GameState:
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r, c + 1) == self.get(r, c + 2) == self.get(r, c + 3):
                     tile = self.get(r, c)
-                    if tile != 2:
+                    if tile != PLAYER_NONE:
                         return tile
 
         # check for vertical wins
@@ -98,25 +103,26 @@ class GameState:
             for c in range(self.cols()):
                 if self.get(r, c) == self.get(r + 1, c) == self.get(r + 2, c) == self.get(r + 3, c):
                     tile = self.get(r, c)
-                    if tile != 2:
+                    if tile != PLAYER_NONE:
                         return tile
 
-        # check for descending diagonal wins
+        # check for descending (left to right) diagonal wins
         for r in range(self.rows() - 3):
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r + 1, c + 1) == self.get(r + 2, c + 2) == self.get(r + 3, c + 3):
                     tile = self.get(r, c)
-                    if tile != 2:
+                    if tile != PLAYER_NONE:
                         return tile
 
-        # check for ascending diagonal wins
+        # check for ascending (left to right) diagonal wins
         for r in range(3, self.rows()):
             for c in range(self.cols() - 3):
                 if self.get(r, c) == self.get(r - 1, c + 1) == self.get(r - 2, c + 2) == self.get(r - 3, c + 3):
                     tile = self.get(r, c)
-                    if tile != 2:
+                    if tile != PLAYER_NONE:
                         return tile
 
+        # board is full
         if self.total_pieces() == (self.rows() * self.cols()):
             return DRAW
 
@@ -125,32 +131,34 @@ class GameState:
     def is_terminal(self):
         return self.winner() != PLAYER_NONE
 
+    # calculates the number of potential wins a player can still obtain
     def num_in_a_row(self, r, c, player):
 
-        possible = [[(r, c), (r + 1, c), (r + 2, c), (r + 3, c)],
-                    [(r, c), (r, c + 1), (r, c + 2), (r, c + 3)],
-                    [(r, c), (r + 1, c + 1), (r + 2, c + 2), (r + 3, c + 3)],
-                    [(r, c), (r - 1, c + 1), (r - 2, c + 2), (r - 3, c + 3)]]
+        # all the potential moves given the current (r,c)
+        moves = [[(r, c), (r + 1, c), (r + 2, c), (r + 3, c)],
+                 [(r, c), (r, c + 1), (r, c + 2), (r, c + 3)],
+                 [(r, c), (r + 1, c + 1), (r + 2, c + 2), (r + 3, c + 3)],
+                 [(r, c), (r - 1, c + 1), (r - 2, c + 2), (r - 3, c + 3)]]
 
-        for r in possible:
-            for c in r:
-                if not (0 <= c[0] < self.rows() and 0 <= c[1] < self.cols()):
-                    possible[possible.index(r)].remove(c)
-
+        # used in the following lambda function to make sure a move is not out-of-bounds
         def check_move(r, c):
             if (0 <= r < self.rows()) and (0 <= c < self.cols()):
                 return self.get(r, c)
             return None
 
-        possible = map(lambda x: map(lambda y: check_move(y[0], y[1]), x), possible)
+        # creates a list of piece types located at each of the potential moves
+        moves = map(lambda x: map(lambda y: check_move(y[0], y[1]), x), moves)
 
         count = 0
 
-        for t in possible:
+        # checks the number of potential pieces in a row for the player.
+        # if the player's piece is already in a spot or the spot is empty then the loop continues.
+        # if the inner loop finishes (ie; it has explored those 4 moves) and the opponent's piece hasn't blocked
+        # it (ie; the same flag is True) then that's a potential four-in-a-row and the count is incremented.
+        for m in moves:
             same = False
-
-            for m in t:
-                if m == player or m == PLAYER_NONE:
+            for p in m:
+                if p == player or p == PLAYER_NONE:
                     same = True
                     continue
                 else:
@@ -165,10 +173,11 @@ class GameState:
     def get_opponent(self, player):
         if player == PLAYER_ONE:
             return PLAYER_TWO
-        else:
-            return PLAYER_ONE
+
+        return PLAYER_ONE
 
 
+# custom time limit exception
 class TimeLimitException(Exception):
     pass
 
@@ -220,12 +229,12 @@ class Player_AlphaBeta:
         self.player = state.player_to_move()
 
         # do your alpha beta (or ID-AB) search here
+        # the return value isn't actually used since the best_move is set during the execution of alpha-beta
         ab_value = self.alpha_beta(state, 0, -INF, INF, True)
 
         legal_moves = state.get_legal_moves()
 
         # return the best move computed by alpha_beta.
-
         # very occasionally it will (somehow) return an illegal move so an extra validity check is needed.
         # this typically only occurs once in 15 matches so one random move shouldn't affect results too heavily
         return self.best_move if self.best_move in legal_moves else random.choice(legal_moves)
@@ -242,7 +251,6 @@ class Player_AlphaBeta:
         try:
             if max_player:
                 val = -INF
-
                 for m in state.get_legal_moves():
                     child = copy.deepcopy(state)
                     child.do_move(m)
@@ -255,7 +263,6 @@ class Player_AlphaBeta:
                 return val
             else:
                 val = INF
-
                 for m in state.get_legal_moves():
                     child = copy.deepcopy(state)
                     child.do_move(m)
@@ -266,5 +273,6 @@ class Player_AlphaBeta:
                         break
 
                 return val
+        # time limit reached, return whatever state we have calculated so far
         except TimeLimitException:
             return state.eval(self.player)
