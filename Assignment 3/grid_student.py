@@ -111,7 +111,26 @@ class Grid:
     # Pseudocode for the algorithm is listed below
     #
     def update_values(self):
-        print("Update Values")  # Remove this, added because python complains about blank functions
+        new_vals = self.get_values()[:]
+
+        for r in range(self.rows()):
+            for c in range(self.cols()):
+                if self.get_state(r, c) != STATE_WALKABLE:
+                    continue
+
+                legal_actions = [(a[0], a[1]) for a in LEGAL_ACTIONS if self.__is_legal_action(r, c, a)]
+
+                for a in legal_actions:
+                    row = a[0]
+                    col = a[1]
+
+                    next_state = self.get_state(row, col)
+                    prob = sum(self.get_policy(row, col)) / len(legal_actions)
+                    reward = self.get_reward(row, col)
+
+                    new_vals[r][c] += prob * (reward + RL_GAMMA * next_state)
+
+        self.__values = new_vals[:]
 
     #
     #   new_values = new estimation array the same size as the previous one

@@ -3,7 +3,7 @@ import time  # used for timing the path-finding
 import pygame as pg  # used for drawing / event handling
 from settings import *  # use a separate file for all the constant settings
 
-from grid_solution import Grid
+from grid_student import Grid
 
 
 # RLGridWorld class which implements the graphical interface for this assignment
