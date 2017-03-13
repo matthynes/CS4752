@@ -111,8 +111,6 @@ class Grid:
     # Pseudocode for the algorithm is listed below
     #
     def update_values(self):
-        new_vals = self.get_values()[:]
-
         for r in range(self.rows()):
             for c in range(self.cols()):
                 if self.get_state(r, c) != STATE_WALKABLE:
@@ -128,9 +126,7 @@ class Grid:
                     prob = sum(self.get_policy(row, col)) / len(legal_actions)
                     reward = self.get_reward(row, col)
 
-                    new_vals[r][c] += prob * (reward + RL_GAMMA * next_state)
-
-        self.__values = new_vals[:]
+                    self.__values[r][c] += prob * (reward + RL_GAMMA * next_state)
 
     #
     #   new_values = new estimation array the same size as the previous one
@@ -160,7 +156,29 @@ class Grid:
     # Pseudocode for the algorithm is listed below
     #
     def update_policy(self):
-        print("Update Policy")  # Remove this, added because python complains about blank functions
+        for r in range(self.rows()):
+            for c in range(self.cols()):
+                if self.get_reward(r, c) > 0:
+                    continue
+
+                new_states = []
+                for a in LEGAL_ACTIONS:
+                    new_row, new_col = r + a[0], c + a[1]
+
+                    new_states += [self.get_value(new_row, new_col) if self.__is_legal_action(r, c, a) else 0]
+
+                max_vals = [x for x in new_states if max(new_states) == x]
+                max_l = len(max_vals)
+
+                new_policy = []
+                for s in new_states:
+                    if s in max_vals:
+                        new_policy += [s / max_l]
+
+                new_policy = [1 / max_l if s in max_vals else 0.0 for s in new_states]
+
+                self.__policy[r][c] = new_policy
+
         #
         #   for each (r,c) state in the grid
         #
@@ -170,10 +188,13 @@ class Grid:
         #       set the policy of this state to have equal probability of taking the action
         #       which leads us to the highest valued neighbor state
         #
-        #       our current policy is stored in self.__policy, which is a 3D array indexed by [row][col][action]
-        #       self.__policy[row][col] is a list of length len(LEGAL_ACTIONS) representing a discrete probability
+        #       our current policy is stored in self.__policy, which is a 3D array indexed by [row][col][
+        # action]
+        #       self.__policy[row][col] is a list of length len(LEGAL_ACTIONS) representing a discrete
+        # probability
         # distribution
-        #       self.__policy[row][col][a] stores the probability that we should take LEGAL_ACTIONS[a] from this state
+        #       self.__policy[row][col][a] stores the probability that we should take LEGAL_ACTIONS[a]
+        # from this state
         #       self.__policy[row][col] probability list should always sum to 1 after the update is complete
         #
         #       for example, in this assignment we have 4 actions in LEGAL_ACTIONS, and if they
