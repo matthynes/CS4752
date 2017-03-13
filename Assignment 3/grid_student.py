@@ -1,4 +1,7 @@
+import math
 from settings import *
+
+INF = math.inf
 
 
 # the class we will use to store the map, and make calls to path finding
@@ -117,29 +120,6 @@ class Grid:
                 if self.get_state(r, c) != STATE_WALKABLE:
                     continue
 
-                # legal_actions = [(a[0], a[1]) for a in LEGAL_ACTIONS if self.__is_legal_action(r, c, a)]
-                #
-                # for a in legal_actions:
-                #     row = a[0]
-                #     col = a[1]
-                #
-                #     next_state = self.get_state(row, col)
-                #     prob = sum(self.get_policy(row, col)) / len(legal_actions)
-                #     reward = self.get_reward(row, col)
-                #
-                #     self.__values[r][c] += prob * (reward + RL_GAMMA * next_state)
-
-                # new_states = []
-                # for a in LEGAL_ACTIONS:
-                #     if self.__is_legal_action(r, c, a):
-                #         new_row, new_col = r + a[0], c + a[1]
-                #         new_states += [(new_row, new_col)]
-                #
-                # for i, s in enumerate(new_states):
-                #     prob = self.get_policy(s[0], s[1])[i]
-                #     reward = self.get_reward(r, c)
-                #     new_vals[r][c] += prob * (reward + RL_GAMMA * self.get_value(s[0], s[1]))
-
                 for i, a in enumerate(LEGAL_ACTIONS):
                     if self.__is_legal_action(r, c, a):
                         new_row = r + a[0]
@@ -184,21 +164,27 @@ class Grid:
                 if self.get_reward(r, c) > 0:
                     continue
 
+                # build a list of state values based on legal actions from state (r,c)
                 new_states = []
                 for a in LEGAL_ACTIONS:
-                    new_row, new_col = r + a[0], c + a[1]
+                    if self.__is_legal_action(r, c, a):
+                        new_row = r + a[0]
+                        new_col = c + a[1]
 
-                    new_states += [self.get_value(new_row, new_col) if self.__is_legal_action(r, c, a) else 0]
+                        new_states.append(self.get_value(new_row, new_col))
+                    else:
+                        new_states.append(-INF)
 
+                # get a list of the max value(s)
                 max_vals = [x for x in new_states if max(new_states) == x]
                 max_l = len(max_vals)
 
-                new_policy = []
-                for s in new_states:
+                # get a blank policy the same size as old one (always 4 for this assignment)
+                new_policy = [0.0 for _ in range(len(self.get_policy(r, c)))]
+                for i, s in enumerate(new_states):
+                    # if the state has a maximum value then assign it an equiprobable chance
                     if s in max_vals:
-                        new_policy += [s / max_l]
-
-                new_policy = [1 / max_l if s in max_vals else 0.0 for s in new_states]
+                        new_policy[i] = 1 / max_l
 
                 self.__policy[r][c] = new_policy
 
