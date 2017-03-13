@@ -111,22 +111,45 @@ class Grid:
     # Pseudocode for the algorithm is listed below
     #
     def update_values(self):
+        new_vals = [[0] * len(self.get_values()[i]) for i in range(len(self.get_values()))]
         for r in range(self.rows()):
             for c in range(self.cols()):
                 if self.get_state(r, c) != STATE_WALKABLE:
                     continue
 
-                legal_actions = [(a[0], a[1]) for a in LEGAL_ACTIONS if self.__is_legal_action(r, c, a)]
+                # legal_actions = [(a[0], a[1]) for a in LEGAL_ACTIONS if self.__is_legal_action(r, c, a)]
+                #
+                # for a in legal_actions:
+                #     row = a[0]
+                #     col = a[1]
+                #
+                #     next_state = self.get_state(row, col)
+                #     prob = sum(self.get_policy(row, col)) / len(legal_actions)
+                #     reward = self.get_reward(row, col)
+                #
+                #     self.__values[r][c] += prob * (reward + RL_GAMMA * next_state)
 
-                for a in legal_actions:
-                    row = a[0]
-                    col = a[1]
+                # new_states = []
+                # for a in LEGAL_ACTIONS:
+                #     if self.__is_legal_action(r, c, a):
+                #         new_row, new_col = r + a[0], c + a[1]
+                #         new_states += [(new_row, new_col)]
+                #
+                # for i, s in enumerate(new_states):
+                #     prob = self.get_policy(s[0], s[1])[i]
+                #     reward = self.get_reward(r, c)
+                #     new_vals[r][c] += prob * (reward + RL_GAMMA * self.get_value(s[0], s[1]))
 
-                    next_state = self.get_state(row, col)
-                    prob = sum(self.get_policy(row, col)) / len(legal_actions)
-                    reward = self.get_reward(row, col)
+                for i, a in enumerate(LEGAL_ACTIONS):
+                    if self.__is_legal_action(r, c, a):
+                        new_row = r + a[0]
+                        new_col = c + a[1]
 
-                    self.__values[r][c] += prob * (reward + RL_GAMMA * next_state)
+                        prob = self.get_policy(r, c)[i]
+                        reward = self.get_reward(r, c)
+                        new_vals[r][c] += prob * (reward + RL_GAMMA * self.get_value(new_row, new_col))
+
+        self.__values = new_vals
 
     #
     #   new_values = new estimation array the same size as the previous one
@@ -179,37 +202,37 @@ class Grid:
 
                 self.__policy[r][c] = new_policy
 
-        #
-        #   for each (r,c) state in the grid
-        #
-        #       if this is a goal/terminal state, skip it, since it doesn't need a policy
-        #       for this assignment, any state with a reward > 0 is considered terminal
-        #
-        #       set the policy of this state to have equal probability of taking the action
-        #       which leads us to the highest valued neighbor state
-        #
-        #       our current policy is stored in self.__policy, which is a 3D array indexed by [row][col][
-        # action]
-        #       self.__policy[row][col] is a list of length len(LEGAL_ACTIONS) representing a discrete
-        # probability
-        # distribution
-        #       self.__policy[row][col][a] stores the probability that we should take LEGAL_ACTIONS[a]
-        # from this state
-        #       self.__policy[row][col] probability list should always sum to 1 after the update is complete
-        #
-        #       for example, in this assignment we have 4 actions in LEGAL_ACTIONS, and if they
-        #       respectively lead us to 4 neighbor states with values [10, 5, 0, 10] then
-        #       the resulting policy p = [0.5, 0.0, 0.0, 0.5] since we want to have
-        #       an equiprobable chance of heading to the max valued neighbors, which in this
-        #       case have a value of 10
-        #
-        #       finally, set self.__policy[r][c] = p
-        #
+                #
+                #   for each (r,c) state in the grid
+                #
+                #       if this is a goal/terminal state, skip it, since it doesn't need a policy
+                #       for this assignment, any state with a reward > 0 is considered terminal
+                #
+                #       set the policy of this state to have equal probability of taking the action
+                #       which leads us to the highest valued neighbor state
+                #
+                #       our current policy is stored in self.__policy, which is a 3D array indexed by [row][col][
+                # action]
+                #       self.__policy[row][col] is a list of length len(LEGAL_ACTIONS) representing a discrete
+                # probability
+                # distribution
+                #       self.__policy[row][col][a] stores the probability that we should take LEGAL_ACTIONS[a]
+                # from this state
+                #       self.__policy[row][col] probability list should always sum to 1 after the update is complete
+                #
+                #       for example, in this assignment we have 4 actions in LEGAL_ACTIONS, and if they
+                #       respectively lead us to 4 neighbor states with values [10, 5, 0, 10] then
+                #       the resulting policy p = [0.5, 0.0, 0.0, 0.5] since we want to have
+                #       an equiprobable chance of heading to the max valued neighbors, which in this
+                #       case have a value of 10
+                #
+                #       finally, set self.__policy[r][c] = p
+                #
 
-        # NOTE:
-        #
-        # - You can press the 's' key to do a value and policy iteration update step
-        # - Holding the 's' key should do this a number of times
-        # - Your algorithm should 'converge' (ie: stop changing values) to the shortest path policy
-        # - When I grade your code, I will be checking that once your code has converged, that
-        #   the policy you have generated is the same as the solution
+                # NOTE:
+                #
+                # - You can press the 's' key to do a value and policy iteration update step
+                # - Holding the 's' key should do this a number of times
+                # - Your algorithm should 'converge' (ie: stop changing values) to the shortest path policy
+                # - When I grade your code, I will be checking that once your code has converged, that
+                #   the policy you have generated is the same as the solution
