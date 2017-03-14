@@ -106,13 +106,8 @@ class Grid:
         # it's a legal action if the resulting state is 0 (not blocked)
         return self.get_state(new_row, new_col) != STATE_BLOCKED
 
-    # Student TODO: Implement This Function
-    #
-    # This function should do a one-step value function estimation update using dynamic programming
-    # The end result should modify only the self.__values structure to reflect the new value estimation
-    #
-    # Pseudocode for the algorithm is listed below
-    #
+    # This function performs a one-step value function estimation update using dynamic programming
+    # The end result modifies the self.__values structure to reflect the new value estimation
     def update_values(self):
         new_vals = [[0] * len(self.get_values()[i]) for i in range(len(self.get_values()))]
         for r in range(self.rows()):
@@ -120,47 +115,25 @@ class Grid:
                 if self.get_state(r, c) != STATE_WALKABLE:
                     continue
 
+                # get a list of all legal actions starting from state (r,c)
                 for i, a in enumerate(LEGAL_ACTIONS):
                     if self.__is_legal_action(r, c, a):
                         new_row = r + a[0]
                         new_col = c + a[1]
-
+                        # probability of taking action i from (r,c)
                         prob = self.get_policy(r, c)[i]
                         reward = self.get_reward(r, c)
                         new_vals[r][c] += prob * (reward + RL_GAMMA * self.get_value(new_row, new_col))
 
         self.__values = new_vals
 
-    #
-    #   new_values = new estimation array the same size as the previous one
-    #   initialize all the values to zero
-    #
-    #   for each (r,c) state in the grid
-    #
-    #       if this is a terminal or blocked state, skip it, since it doesn't need a value
-    #       we can do this with the following: 
-    #       if self.get_state(r,c) != STATE_WALKABLE: continue
-    #
-    #       for each action legal from this state
-    #
-    #           next_state       =  the next state reach via this action
-    #           probability      =  the probability of taking this action given my current policy
-    #           reward           =  the reward obtained after performing an action at state (r,c)
-    #           new_value(state) += probability * (reward + RL_GAMMA * value_of_next_state)
-    #
-    #   set self.__values equal to the new values you have calculated
-    #
-
-    # Student TODO: Implement This Function
-    #
-    # This function should do a one-step value policy calculation update using dynamic programming
-    # The end result should modify only the self.__policy structure to reflect the new policy
-    #
-    # Pseudocode for the algorithm is listed below
-    #
+    # This function performs a one-step policy function estimation update using dynamic programming
+    # The end result modifies the self.__policy structure to reflect the new value estimation
+    # Probably way over-engineered but it works
     def update_policy(self):
         for r in range(self.rows()):
             for c in range(self.cols()):
+                # states with a reward > 0 don't need a new policy
                 if self.get_reward(r, c) > 0:
                     continue
 
@@ -173,6 +146,8 @@ class Grid:
 
                         new_states.append(self.get_value(new_row, new_col))
                     else:
+                        # append -infinity so new_states has the correct number of values (4 in this case)
+                        # -infinity just ensures that legitimate small values won't get missed by max_vals
                         new_states.append(-INF)
 
                 # get a list of the max value(s)
@@ -187,38 +162,3 @@ class Grid:
                         new_policy[i] = 1 / max_l
 
                 self.__policy[r][c] = new_policy
-
-                #
-                #   for each (r,c) state in the grid
-                #
-                #       if this is a goal/terminal state, skip it, since it doesn't need a policy
-                #       for this assignment, any state with a reward > 0 is considered terminal
-                #
-                #       set the policy of this state to have equal probability of taking the action
-                #       which leads us to the highest valued neighbor state
-                #
-                #       our current policy is stored in self.__policy, which is a 3D array indexed by [row][col][
-                # action]
-                #       self.__policy[row][col] is a list of length len(LEGAL_ACTIONS) representing a discrete
-                # probability
-                # distribution
-                #       self.__policy[row][col][a] stores the probability that we should take LEGAL_ACTIONS[a]
-                # from this state
-                #       self.__policy[row][col] probability list should always sum to 1 after the update is complete
-                #
-                #       for example, in this assignment we have 4 actions in LEGAL_ACTIONS, and if they
-                #       respectively lead us to 4 neighbor states with values [10, 5, 0, 10] then
-                #       the resulting policy p = [0.5, 0.0, 0.0, 0.5] since we want to have
-                #       an equiprobable chance of heading to the max valued neighbors, which in this
-                #       case have a value of 10
-                #
-                #       finally, set self.__policy[r][c] = p
-                #
-
-                # NOTE:
-                #
-                # - You can press the 's' key to do a value and policy iteration update step
-                # - Holding the 's' key should do this a number of times
-                # - Your algorithm should 'converge' (ie: stop changing values) to the shortest path policy
-                # - When I grade your code, I will be checking that once your code has converged, that
-                #   the policy you have generated is the same as the solution
