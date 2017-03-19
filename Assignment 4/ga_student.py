@@ -1,6 +1,7 @@
 import random, math
 from sudoku import Sudoku
 
+
 # Student TODO: Modify This (optional)
 #
 # This is the function that will be used by the genetic algorithm as the fitness function
@@ -26,8 +27,8 @@ from sudoku import Sudoku
 # full sudoku board (get close to solution)
 #
 def eval_sudoku(array):
-    #return sum(array)  # un-comment this line and watch the GA optimize to all max numbers
-    #return -sum(array) # un-comment this line and watch the GA optimize to all ones
+    # return sum(array)  # un-comment this line and watch the GA optimize to all max numbers
+    # return -sum(array) # un-comment this line and watch the GA optimize to all ones
     s = Sudoku(0)
     size = int(math.sqrt(len(array)))
     s.set_arr(array)
@@ -36,13 +37,13 @@ def eval_sudoku(array):
     for r in range(s.size()):
         vals = set()
         for c in range(s.size()):
-            vals.add(s.get(r,c))
+            vals.add(s.get(r, c))
         fitness += len(vals)
     # count unique values in each column
     for c in range(s.size()):
         vals = set()
-        for r in range(s.size()): 
-            vals.add(s.get(r,c))
+        for r in range(s.size()):
+            vals.add(s.get(r, c))
         fitness += len(vals)
     # count unique values in each square
     sqsize = int(math.sqrt(s.size()))
@@ -51,14 +52,16 @@ def eval_sudoku(array):
             vals = set()
             for r in range(sqsize):
                 for c in range(sqsize):
-                    vals.add(s.get(sr*sqsize+r, sc*sqsize+c))
+                    vals.add(s.get(sr * sqsize + r, sc * sqsize + c))
             fitness += len(vals)
     return fitness
+
 
 # the class that stores the genetic algorithm settings
 class GASettings:
     # we need something in here so that python doesn't complain about blank classes
     description = 'Blank struct to hold our GA settings in'
+
 
 # TODO: Modify this function (optional)
 #
@@ -68,15 +71,18 @@ class GASettings:
 # but better settings probably exist. 
 def get_ga_settings(sudoko_size):
     settings = GASettings()
-    settings.individual_values      = [(i+1) for i in range(sudoko_size)]   # list of possible values individuals can take
-    settings.individual_size        = sudoko_size*sudoko_size               # length of an individual
-    settings.fitness_function       = eval_sudoku                           # the fitness function of an individual
-    settings.population_size        = 100                                   # total size of each population                             (experiment with this)
-    settings.elitism_ratio          = 0.2                                   # select top x% of individuals to survive                   (experiment with this)
-    settings.parent_roulette_ratio  = 0.2                                   # select x% of population as parents via roulette wheel     (experiment with this)
-    settings.mutation_rate          = 0.2                                   # mutation rate percentage                                  (experiment with this)
-    settings.crossover_index        = settings.individual_size // 2         # the index to split parents for recombination              
+    settings.individual_values = [(i + 1) for i in range(sudoko_size)]  # list of possible values individuals can take
+    settings.individual_size = sudoko_size * sudoko_size  # length of an individual
+    settings.fitness_function = eval_sudoku  # the fitness function of an individual
+    settings.population_size = 100  # total size of each population                             (experiment with this)
+    settings.elitism_ratio = 0.2  # select top x% of individuals to survive                   (experiment with this)
+    settings.parent_roulette_ratio = 0.2  # select x% of population as parents via roulette wheel     (experiment
+    # with this)
+    settings.mutation_rate = 0.2  # mutation rate percentage                                  (experiment with this)
+    settings.crossover_index = settings.individual_size // 2  # the index to split parents for recombination
+
     return settings
+
 
 # Student TODO: Implement This Function (required)
 #
@@ -96,28 +102,37 @@ def get_ga_settings(sudoko_size):
 #
 #   next_population - The next population after a one-generation genetic algorithm evolution
 #
-def evolve(population, settings):
+def roulette_select(population):
+    max = sum(population)
+    select = random.uniform(0, max)
+    current = 0
+    for i, p in enumerate(population):
+        current += p
+        if current > select:
+            return i
 
+
+def evolve(population, settings):
     # 1. First, it is very useful to store the fitness of each of the individuals in a separate
     # array, pop_fitness, such that pop_fitness[i] = fitness(population[i])
     #
     # pop_fitness = [calculate fitnesses of population]
-    #
-    # 
-    # 2. The next step is to select the parents that will be used to generate the next geneation's
+    pop_fitness = [settings.fitness_function(x) for x in population]
+
+    # 2. The next step is to select the parents that will be used to generate the next generation's
     # offspring. This will be done via roulette wheel selection, covered in class. You should
     # store these parents in a list called 'parents'. The number of parents P you should select:
-    # P = int(settings.parent_roulette_ratio * len(population)). 
-    # 
-    # parents = []
-    # while len(parents) < P:
-    #   parents.append(select next parent via linear roulette wheel selection by fitness)
+    P = int(settings.parent_roulette_ratio * len(population))
+
+    parents = []
+    while len(parents) < P:
+        parents.append(population[roulette_select(pop_fitness)])
     #
     #
     # 3. Let's now define a blank list which will hold the next population's individuals. At the
     # end of this function, it should be the same size as the previous population.
     #
-    # next_population = []
+    next_population = [[] for _ in range(len(population[0]))]
     #
     #
     # 4. The next step is elite individual selection. You will select the top E fitness individuals
@@ -126,10 +141,10 @@ def evolve(population, settings):
     # For example, if E is 2, and pop_fitness = [5, 3, 1, 7] then you will choose the first and last
     # individuals as the elite ones to add to the next population, since they have the top 2 fitnesses.
     #
-    # 
+    #
     # 5. Step 5 is the offspring generation (recombination) step. You will generate offspring until
-    # you have enough to fill next_population to the size of the previous population. You will generate 
-    # offspring via crossover, with the # crossover index being defined in settings.crossover_index. 
+    # you have enough to fill next_population to the size of the previous population. You will generate
+    # offspring via crossover, with the # crossover index being defined in settings.crossover_index.
     # Pseudocode for generating children:
     #
     # offspring = []
@@ -155,7 +170,4 @@ def evolve(population, settings):
     #
     # return next_population
     #
-
-    # temporarily returns the previous population, just so the main file works properly
-    print("DEFAULT STUDENT FILE RUNNING - NO IMPROVEMENTS") # remove me
     return population
