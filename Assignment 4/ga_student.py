@@ -132,7 +132,7 @@ def evolve(population, settings):
     # 3. Let's now define a blank list which will hold the next population's individuals. At the
     # end of this function, it should be the same size as the previous population.
     #
-    next_population = [[] for _ in range(len(population[0]))]
+    next_population = []
     #
     #
     # 4. The next step is elite individual selection. You will select the top E fitness individuals
@@ -140,34 +140,63 @@ def evolve(population, settings):
     # to survive. The number E is equal to int(settings.elitism_ratio * len(population))
     # For example, if E is 2, and pop_fitness = [5, 3, 1, 7] then you will choose the first and last
     # individuals as the elite ones to add to the next population, since they have the top 2 fitnesses.
-    #
+    E = int(settings.elitism_ratio * len(population))
+    elite = sorted(range(len(pop_fitness)), key=lambda x: pop_fitness[x])[-E:]
+    next_population.extend(elite)
     #
     # 5. Step 5 is the offspring generation (recombination) step. You will generate offspring until
     # you have enough to fill next_population to the size of the previous population. You will generate
     # offspring via crossover, with the # crossover index being defined in settings.crossover_index.
     # Pseudocode for generating children:
     #
-    # offspring = []
-    # while (still have offspring to generate)
-    #   mother = choose random parent from parent list
-    #   father = choose random parent from parent list
-    #   if (mother == father): continue
-    #   child1 = crossover 1st part of mother with 2nd part of father
-    #   child2 = crossover 2nd part of father with 1st part of mother
-    #   add children to the offspring list
-    #
-    # 6. Step 6 is to mutate the offspring. You will mutate M of the offpspring, where M is defined
-    # as int(settings.mutation_rate * len(offspring)). Do not mutate a single offspring twice. You
-    # will perform mutation by changing a single element of the individual's array to a random legal
-    # sudoku number, which are given in settings.individual_values
-    #
+    offspring = []
+    while len(next_population) < len(population):
+        mother = random.choice(parents)
+        father = random.choice(parents)
+
+        if mother == father:
+            continue
+
+        child1 = mother[:settings.crossover_index] + father[settings.crossover_index:]
+        child2 = father[:settings.crossover_index] + mother[settings.crossover_index:]
+
+        offspring.extend([child1, child2])
+
+        # mother = choose random parent from parent list
+        # father = choose random parent from parent list
+        #   if (mother == father): continue
+        #   child1 = crossover 1st part of mother with 2nd part of father
+        #   child2 = crossover 2nd part of father with 1st part of mother
+        #   add children to the offspring list
+
+
+        #
+        # 6. Step 6 is to mutate the offspring. You will mutate M of the offpspring, where M is defined
+        # as int(settings.mutation_rate * len(offspring)). Do not mutate a single offspring twice. You
+        # will perform mutation by changing a single element of the individual's array to a random legal
+        # sudoku number, which are given in settings.individual_values
+        M = int(settings.mutation_rate * len(offspring))
+        mutated = set()
+
+        for _ in range(M):
+            i = random.randint(0, len(offspring) - 1)
+            child = offspring[i]
+            j = random.randint(0, len(child) - 1)
+
+            if tuple(child) in mutated:
+                continue
+
+            child[j] = random.choice(settings.individual_values)
+
+            offspring[i] = child
+
+            mutated.add(tuple(child))
+
+        next_population.append(offspring)
     # As a possible optimization, you can experiment with performing different types of mutations
     # here, but please add that as an option in your settings file, and explain it in your README.txt
     #
     # 7. Finally, you should combine your elite individual selection with your offspring to form
     # the next population, and return it as a single list. This function will then be called iteratively
     # which each new population. Each iteration is one generation.
-    #
-    # return next_population
-    #
-    return population
+    return next_population
